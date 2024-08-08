@@ -2,6 +2,7 @@ import unittest
 
 from htmlnode import HTMLNode
 from htmlnode import LeafNode
+from htmlnode import ParentNode
 
 class TestHTMLNode(unittest.TestCase):
     def test_no_props(self):
@@ -24,6 +25,123 @@ class TestHTMLNode(unittest.TestCase):
     def test_leaf_with_prop(self):
         node = LeafNode(value="Click me!", tag="a", props={"href": "https://www.google.com"})
         self.assertEqual(node.to_html(), '<a href="https://www.google.com">Click me!</a>')
+    
+    def test_leaf_with_no_value(self):
+        with self.assertRaises(ValueError):
+            node = LeafNode(value=None)
+            node.to_html()
+
+    def test_PN_no_child(self):
+        with self.assertRaises(ValueError):
+            node = ParentNode(tag="p", children=None)
+            node.to_html()
+    
+    def test_PN_no_tag(self):
+        with self.assertRaises(ValueError):
+            node = ParentNode(tag=None, children=[LeafNode("b", "Bold text")])
+            node.to_html()
+
+    def test_nested_wo_child(self):
+        with self.assertRaises(ValueError):
+            node = ParentNode(tag="p", children=[ParentNode(tag="a", children=None)])
+            node.to_html()
+
+    def test_parent_node(self):
+        node = ParentNode(
+                "p",
+                [
+                    LeafNode(tag="b", value="Bold text"),
+                    LeafNode(tag=None, value="Normal text"),
+                    LeafNode(tag="i", value="italic text"),
+                    LeafNode(tag=None, value="Normal text"),
+                ],
+        )
+
+        self.assertEqual(node.to_html(), '<p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p>') 
+
+    def test_nested_parent_with_leaf(self):
+        node = ParentNode(
+                "p",
+                [
+                    ParentNode("p", [
+                                        LeafNode(tag="b", value="Bold text"),
+                                        LeafNode(tag=None, value="Normal text"),
+                                        LeafNode(tag="i", value="italic text"),
+                                        LeafNode(tag=None, value="Normal text"),
+                                    ]
+                              )
+                ],
+                    
+        )
+        
+        self.assertEqual(node.to_html(), '<p><p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p></p>')
+
+
+    def test_extreme_nested(self):
+        node = ParentNode(
+                "p",
+                [
+                    ParentNode("p", [
+                                       ParentNode("p", [
+                                                            LeafNode(tag="b", value="Bold text"),
+                                                            LeafNode(tag=None, value="Normal text"),
+                                                            LeafNode(tag="i", value="italic text"),
+                                                            LeafNode(tag=None, value="Normal text"), 
+                                                        ], 
+                                                ),
+ 
+                                        LeafNode(tag="b", value="Bold text"),
+                                        LeafNode(tag=None, value="Normal text"),
+                                        LeafNode(tag="i", value="italic text"),
+                                        LeafNode(tag=None, value="Normal text"),
+                                    ]
+                              )
+                ],
+                    
+        )
+        
+        self.assertEqual(node.to_html(), '<p><p><p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p></p>')
+  
+
+    def test_parent_with_prop(self):
+        node = ParentNode(
+                "p",
+                [
+                    LeafNode(tag="b", value="Bold text"),
+                    LeafNode(tag=None, value="Normal text"),
+                    LeafNode(tag="i", value="italic text"),
+                    LeafNode(tag=None, value="Normal text"),
+                    ], props={"href": "https://www.google.com"}
+        )
+
+        self.assertEqual(node.to_html(), '<p href="https://www.google.com"><b>Bold text</b>Normal text<i>italic text</i>Normal text</p>') 
+ 
+
+    def test_nested_parent_with_prop(self):
+        node = ParentNode(
+                "p",
+                [
+                    ParentNode("p", [
+                                       ParentNode("p", [
+                                                            LeafNode(tag="b", value="Bold text"),
+                                                            LeafNode(tag=None, value="Normal text"),
+                                                            LeafNode(tag="i", value="italic text"),
+                                                            LeafNode(tag=None, value="Normal text"), 
+                                                        ], props={"href": "https://www.google.com"}
+  
+                                                  ),
+ 
+                                        LeafNode(tag="b", value="Bold text"),
+                                        LeafNode(tag=None, value="Normal text"),
+                                        LeafNode(tag="i", value="italic text"),
+                                        LeafNode(tag=None, value="Normal text"),
+                                    ]
+                              )
+                ],
+                    
+        )
+        
+        self.assertEqual(node.to_html(), '<p><p><p href="https://www.google.com"><b>Bold text</b>Normal text<i>italic text</i>Normal text</p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p></p>') 
 
 if __name__ == "__main__":
     unittest.main()
